@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset=utf-8>
+    <title>Demo</title>
+    <link rel="stylesheet" href="./stylesheets/html5demos.css">
+<body>
+<section id="wrapper">
+    <header>
+        <h1>不會讓你走入絕境的新導航APP<br>
+            A new navigation app that won't let you go into impasse.
+            </h1>
+    </header>
+    
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=drawing,places&key=AIzaSyAE0gwqoGwGgJ03uJye33WvQdi4R1i5GHI"></script>
+    
+    <article>   
+        
+        <p><span id="status"> </span></p>
+        <div>
+            <input id="address"  value="當前位置"/>
+            <input type="button" value="尋找地點" onclick="codeAddress()" id="search">
+        </div>
+        <div>
+            <b>Start: </b>
+            <input id="start"  >
+            <b>End: </b>
+            <input id="end" >
+            <select id="method"  >
+                <option value="DRIVING">開車</option>
+                <option value="WALKING">步行</option>
+            </select>
+            <input type="button" value="尋找路線" onclick="calcRoute()" id="searchRoute">
+        </div>
+    </article>
+    <iframe src="https://www.google.com/maps/d/embed?mid=1tIDhMaUyxzLI8GI4IRBSadxHSo_EFKPp" width="640" height="480"></iframe>
+    <script>
+        var geocoder;
+        var map;
+        var directionsService = new google.maps.DirectionsService();
+        var directionsDisplay = new google.maps.DirectionsRenderer();
+        function success(position) {
+            var s = document.querySelector('#status');
+            if (s.className == 'success') {
+                return;
+            }
+            s.innerHTML = " ";
+            s.className = 'success';
+            var mapcanvas = document.createElement('div');
+            mapcanvas.id = 'mapcanvas';
+            mapcanvas.style.height = '450px';
+            mapcanvas.style.width = '1000px';
+
+            document.querySelector('article').appendChild(mapcanvas);
+            console.log("postion : ",position );
+            geocoder = new google.maps.Geocoder();
+            var latlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+            var myOptions = {  
+                zoom: 15,  
+                center: latlng,
+                mapTypeControl: false,
+                navigationControlOptions: {style: google.maps.NavigationControlStyle.SMALL },
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+            map = new google.maps.Map(document.getElementById("mapcanvas"), myOptions);
+
+            var marker = new google.maps.Marker({ 
+                position: latlng,
+                map: map,
+                title:"You are here! (at least within a "+position.coords.accuracy+" meter radius)"
+            });
+            google.maps.event.addListener(marker, 'click', function() { 
+                map.setZoom(20);
+            });
+        }
+        function error(msg) {
+            var s = document.querySelector('#status');
+            s.innerHTML = typeof msg == 'string' ? msg : "failed";
+            s.className = 'fail';
+        }
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(success, error);
+        } else {
+            error('not supported');
+        }
+        function codeAddress() {
+            var address = document.getElementById("address").value;
+            geocoder.geocode( { 'address': address}, function(results, status) {
+                if (status == google.maps.GeocoderStatus.OK) {
+                    console.log("the result is : ",results);
+                    map.setCenter(results[0].geometry.location);
+                    var marker = new google.maps.Marker({ 
+                        map: map,
+                        position: results[0].geometry.location 
+                    });
+                } else {
+                    alert("未尋找到您输入的地址，請重新輸入！！！！");
+                    console.log("Geocode was not successful for the following reason: " + status);
+                }
+            });
+        }
+        function calcRoute() {
+            directionsDisplay.setMap(map);
+            var start = document.getElementById("start").value;
+            var end = document.getElementById("end").value;
+            var method=document.getElementById("method").value;
+            var request = {
+                origin:start,
+                destination:end
+            };
+            if(method=="DRIVING"){
+                request.travelMode=google.maps.TravelMode.DRIVING;
+            }else{
+                request.travelMode=google.maps.TravelMode.WALKING;
+            }
+            directionsService.route(request, function(result, status) {
+                if (status == google.maps.DirectionsStatus.OK) {
+                    directionsDisplay.setDirections(result);
+                }else{
+                    alert("未尋找到您需要的路線，請重新輸入！！！！");
+                    console.log("Geocode was not successful for the following reason: " + status);
+                }
+            });
+        }
+        
+    </script>
+</section>
+</body>
+</html>
